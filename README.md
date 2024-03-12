@@ -1,1 +1,2 @@
-# Generative AI with LLM
+# Generative AI
+
