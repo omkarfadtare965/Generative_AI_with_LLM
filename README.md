@@ -83,11 +83,29 @@ __Additional Use Cases:__
 
 ![image](https://github.com/user-attachments/assets/175f0531-fbaf-4a5b-8ef4-212b964e2c9f)
 
-
-
-
-
-
+## Simplifying transformer architecture
+- The transformer architecture is split into two distinct parts Encoder and decoder.
+- These components work in conjunction with each other and they share a number of similarities.
+- Machine learning models are just big statistical calculators and they work with numbers, not words. So before passing the text into the model process you first tokenize the words. This converts words into numbers representing a position in a dictionary of all the possible words that the model can work with.
+- What are the various tokenization methods?
+- Once you select a tokenizer to train the model you must use the same tokenizer when you generate text.
+- After tokenization pass it to the embedding layer (This is a trainable vector embedding space) high dimensional space where each token is represented as a vector and occupies a unique location within that space.
+- Each token ID in the vocabulary is matched to a multi-dimensional vector and the intuition is that these vectors learn to encode the meaning and context of individual tokens in the input sequence.
+- Embedding vector sequences have been using natural language processing for some time previous generation language algorithms like word2vec use this concept.
+- Each word is matched to a token ID and each token ID is mapped to a vector.
+- In the embedding space you can calculate the distance between the words as an angle 
+- As you add the token vectors into the base encoder or the decoder you also ass positional encoding, the model processes each of the input tokens in parallel. So by adding the positional encoding you preserve the information about the word order and don't lose the relevance of the position of the word in a sentence. 
+- Once you summed the input tokens and the positional encoding you pass the resulting vector to the self-attention layer.
+- Here the model analyzes the relationships between the tokens in your input sequence. This allows the model to attend two different  parts of the input sequence to better capture the contextual dependencies between the words.
+- The self-attention weights that are learned during training and stored in these layers reflect the importance of each word in that input sequence to all other words in the sequence. But this does not happen just once the transformer architecture actually has multi-headed self-attention this means the multiple sets of self-attention weights or heads are learned in parallel and independently of each other.
+- The number of attention heads included in the attention layer varies from model to model but numbers in the range of 12-100 are common.
+- The intuition here is that each delf attention head will learn a different aspect of language.
+- For example, one head may see the relationship between the people entities in our sentence. While another head may focus on the activity of the sentence. Whilst yet another head may focus on some other properties such as if the words rhyme.
+- The weights of each head are randomly initialized and given sufficient training data and time, each will learn different aspects of language.
+- Now that all of the attention weights have been applied to your input data, the output is processed through a fully connected feed-forward network. The output of this layer is a vector of logits proportional to the probability score for each and every token in the tokenizer dictionary.
+- You can then pass these logits to a final softmax layer, where they are normalized into a probability score for each word. This output includes a probability for every single word in the vocabulary, so there's likely to be thousands of scores here.
+- One single token will have a score higher than the rest. This is the most likely predicted token.
+- 
 
 
 
