@@ -228,15 +228,26 @@ __Additional Use Cases:__
 - equence-to-sequence models use both the encoder and decoder part off the original transformer architecture. The exact details of the pre-training objective vary from model to model. The T5 model is pre-trained using span corruption. Sequence-to-sequence models are often used for translation, summarization, and question-answering.
 
 ## Challenges in training LLMs:
-- One of the most common issues you still counter when you try to train large language models is running out of memory.
-- If you've ever tried training or even just loading your model on Nvidia GPUs, this error message might look familiar. CUDA, short for Compute Unified Device Architecture, is a collection of libraries and tools developed for Nvidia GPUs.
-- Libraries such as PyTorch and TensorFlow use CUDA to boost performance on metrics multiplication and other operations common to deep learning.
+- One common issue encountered while training large language models is the OutOfMemoryError, which occurs when CUDA, a collection of libraries and tools developed for Nvidia GPUs and used by frameworks like PyTorch and TensorFlow to accelerate deep learning operations, runs out of memory
+- LLMs require a significant amount of memory to store their parameters, with each parameter typically needing 4 bytes (32-bit float), meaning 1 billion parameters require 4 GB of RAM. However, to train the model, you need additional memory for 2 ADAM optimizers, gradients, activations, and temporary memory used by your function. In total, you'll actually need approximately 6 times the amount of GPU RAM that the model weights alone require.
+- To train a one billion parameter model at 32-bit full precision, you'll need approximately 24 gigabyte of GPU RAM.
+- By default, model weights, activations, and other model parameters are stored in FP32.
+- Quantization statistically projects the original 32-bit floating point numbers into a lower precision space, using scaling factors calculated based on the range of the original 32-bit floating point numbers.
+- you lose some precision with this projection.this loss in precision is acceptable in most cases because you're trying to optimize for memory footprint.
+- Storing a value in FP32 requires four bytes of memory. In contrast, storing a value on FP16 requires only two bytes of memory, so with quantization you have reduced the memory requirement by half.
+- One datatype in particular BFLOAT16, has recently become a popular alternative to FP16. BFLOAT16, short for Brain Floating Point Format developed at Google Brain has become a popular choice in deep learning.
+- Many LLMs, including FLAN-T5, have been pre-trained with BFLOAT16. BFLOAT16 or BF16 is a hybrid between half precision FP16 and full precision FP32.
+- BF16 significantly helps with training stability and is supported by newer GPU's such as NVIDIA's A100. BFLOAT16 is often described as a truncated 32-bit float, as it captures the full dynamic range of the full 32-bit float, that uses only 16-bits.
+- This not only saves memory, but also increases model performance by speeding up calculations. The downside is that BF16 is not well suited for integer calculations,
+- the goal of quantization is to reduce the memory required to store and train models by reducing the precision off the model weights.
+- Quantization statistically projects the original 32-bit floating point numbers into lower precision spaces using scaling factors calculated based on the range of the original 32-bit floats.
+- BFLOAT16 has become a popular choice of precision in deep learning as it maintains the dynamic range of FP32, but reduces the memory footprint by half. Many LLMs, including FLAN-T5, have been pre-trained with BFOLAT16.
+- By applying quantization, you can reduce your memory consumption required to store the model parameters down to only two gigabyte using 16-bit half precision of 50% saving and you could further reduce the memory footprint by another 50% by representing the model parameters as eight bit integers, which requires only one gigabyte of GPU RAM.
+- As modal scale beyond a few billion parameters, it becomes impossible to train them on a single GPU. Instead, you'll need to turn to distributed computing techniques while you train your model across multiple GPUs. which is very expensive. 
 
-## Technique to reduce the memory required for training:
-- Quantization: The main idea here is that you reduce the memory required to store the weights of your model by reducing their precision from 32-bit floating point numbers to 16-bit floating point numbers, or eight-bit integer numbers
-- the goal of quantization is to reduce the memory required to store and train models by reducing the precision off the model weights. Quantization statistically projects the original 32-bit floating point numbers into lower precision spaces using scaling factors calculated based on the range of the original 32-bit floats.
-- Modern deep learning frameworks and libraries support quantization-aware training, which learns the quantization scaling factors during the training process.
-- 
+
+## Techniques to reduce the memory required for training:
+
 
 
 
