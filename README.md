@@ -246,7 +246,81 @@ __Additional Use Cases:__
 - As modal scale beyond a few billion parameters, it becomes impossible to train them on a single GPU. Instead, you'll need to turn to distributed computing techniques while you train your model across multiple GPUs. which is very expensive. 
 
 
-## Techniques to reduce the memory required for training:
+## Model sharding: 
+Fully Sharded Data Parallel (FSDP) in PyTorch is a popular implementation that builds on the Zero Redundancy Optimizer (ZeRO) technique. ZeRO was designed to optimize memory usage by distributing or "sharding" model states—such as parameters, gradients, and optimizer states—across multiple GPUs. This approach is particularly beneficial when the model size exceeds the memory capacity of a single GPU, allowing the model to be trained in a distributed manner across several GPUs without running into memory limitations.
+
+How ZeRO Works
+ZeRO addresses a key limitation in Distributed Data Parallel (DDP) training, where each GPU maintains a full copy of the model, leading to high memory consumption. By contrast, ZeRO shards the model parameters, gradients, and optimizer states across GPUs, significantly reducing the memory footprint.
+
+ZeRO Stage 1 shards only the optimizer states across GPUs, which can reduce memory usage by up to a factor of four.
+ZeRO Stage 2 extends this by also sharding the gradients, achieving up to an eightfold reduction in memory usage when combined with Stage 1.
+ZeRO Stage 3 takes this further by sharding the model parameters in addition to the optimizer states and gradients. When all three stages are used together, the memory reduction is proportional to the number of GPUs, meaning a setup with 64 GPUs could reduce the memory usage by 64 times.
+FSDP vs. DDP
+Unlike DDP, where each GPU has a full copy of all the model states needed for processing, FSDP requires GPUs to communicate with each other to collect the necessary sharded data for the forward and backward passes. This on-demand collection and release of data introduce a trade-off between performance and memory usage. While FSDP's approach reduces overall GPU memory utilization, it increases communication overhead, which can affect performance, especially as the model size grows and is distributed across more GPUs.
+
+FSDP also offers flexibility in managing this trade-off by allowing you to configure the "sharding factor." A sharding factor of one results in no sharding (similar to DDP), while the maximum sharding factor fully shards the model across all available GPUs, providing the greatest memory savings but at the cost of increased inter-GPU communication.
+
+Handling Large Models
+When training very large models—such as those with billions of parameters—DDP often encounters out-of-memory errors because it replicates the entire model on each GPU. FSDP, however, can efficiently handle such large models by distributing the model states across GPUs. Additionally, using techniques like lowering precision (e.g., to 16-bit) can further improve computational efficiency, leading to higher teraflops.
+
+Communication Overhead
+One of the trade-offs with FSDP is the increased communication overhead as the model size grows and the number of GPUs involved in training increases. This communication overhead can slow down training as more data needs to be exchanged between GPUs, which becomes a bottleneck, especially in large-scale training setups.
+
+
+## Relationship between model size, training confga and performance to determine how big the model is:
+- The goal during pre-training is to maximize the model's performance of its learning objective, which is minimizing the loss when predicting tokens.
+- Two options you have to achieve better performance are increasing the size of the dataset you train your model on and increasing the number of parameters in your model. You could scale either of both of these quantities to improve performance.
+- another issue to take into consideration is your compute budget which includes factors like the number of GPUs you have access to and the time you have available for training models.
+
+![image](https://github.com/user-attachments/assets/188d91c0-4e92-4551-884e-541d90ee82cc)
+
+## Unit of compute that quantifies the required resources:
+- A petaFLOP per second day is a measurement of the number of floating point operations performed at a rate of one petaFLOP per second, running for an entire day. One petaFLOP corresponds to one quadrillion floating point operations per second.
+- larger numbers can be achieved by either using more compute power or training for longer or both.
+- A power law is a mathematical relationship between two variables, where one is proportional to the other raised to some power.
+- this would suggest that you can just increase your compute budget to achieve better model performance. In practice however, the compute resources you have available for training will generally be a hard constraint set by factors such as the hardware you have access to, the time available for training and the financial budget of the project. If you hold your compute budget fixed, the two levers you have to improve your model's performance are the size of the training dataset and the number of parameters in your model.
+- The OpenAI researchers found that these two quantities also show a power-law relationship with a test loss in the case where the other two variables are held fixed.
+
+![image](https://github.com/user-attachments/assets/4cf64e79-1768-4974-a8f7-91f059fa240c)
+
+![image](https://github.com/user-attachments/assets/78cbb169-ee20-4340-8e41-31bb69fd9165)
+
+## Instruction tuning and Fine tuning:
+- When you have a base model, that was initially pretrained, it has encoded a lot of really good information, usually about the world.
+- So it knows about things, but it doesn't necessarily know how to be able to respond to our prompts, our questions. So when we instruct it to do a certain task, it doesn't necessarily know how to respond. And so instruction fine-tuning helps it to be able to change its behavior to be more helpful for us. "catastrophic forgetting: So that's where you train the model on some extra data in this insane instruct fine-tuning. And then it forgets all of that stuff that it had before, or a big chunk of that data that it had before."
+- different instruction types
+- Types of fine tuning: instruction fine tuning and fine tuning for specialized applicaton
+- One of the problems with fine-tuning is you take a giant model and you fine-tune every single parameter in that model. You have this big thing to store around and deploy, and it's actually very compute and memory expansive.>>  parameter efficient fine-tuning or PEFT that can allow you to mitigate some of those concerns
+- parameter efficient fine-tuning is a great way to still achieve similar performance results on a lot of tasks that you can with full fine-tuning. But then actually take advantage of techniques that allow you to freeze those original model weights. Or add adaptive layers on top of that with a much smaller memory footprint,
+- LoRA: because of the performance results of using those low rank matrices as opposed to full fine-tuning, you're able to get really good performance results with minimal compute and memory requirements.
+-  many developers will often start off with prompting, and sometimes that gives you good enough performance and that's great. And sometimes prompting hits a ceiling in performance and then this type of fine-tuning with LoRA or other PEFT technique is really critical for unlocking that extra level performance. the cost of using a giant model, which is a lot of benefits versus for your application fine-tuning a smaller model.
+
+
+- you'll learn about methods that you can use to improve the performance of an existing model for your specific use case. You'll also learn about important metrics that can be used to evaluate the performance of your finetuned LLM and quantify its improvement over the base model you started with. how to fine tune an LLM with instruction prompts.
+- Few shot, strategy has a couple of drawbacks. First, for smaller models, it doesn't always work, even when five or six examples are included. Second, any examples you include in your prompt take up valuable space in the context window, reducing the amount of room you have to include other useful information.
+- another solution exists, you can take advantage of a process known as fine-tuning to further train a base model.
+- In contrast to pre-training, where you train the LLM using vast amounts of unstructured textual data via selfsupervised learning, fine-tuning is a supervised learning process where you use a data set of labeled examples to update the weights of the LLM. The labeled examples are prompt completion pairs, the fine-tuning process extends the training of the model to improve its ability to generate good completions for a specific task. instruction fine tuning, is particularly good at improving a model's performance on a variety of tasks.
+- instruction fine-tuning trains the model using examples that demonstrate how it should respond to a specific instruction.
+- The instruction in both examples is classify this review, and the desired completion is a text string that starts with sentiment followed by either positive or negative. The data set you use for training includes many pairs of prompt completion examples for the task you're interested in, each of which includes an instruction.
+- For example, if you want to fine tune your model to improve its summarization ability, you'd build up a data set of examples that begin with the instruction summarize, the following text or a similar phrase.
+- And if you are improving the model's translation skills, your examples would include instructions like translate this sentence.
+- These prompt completion examples allow the model to learn to generate responses that follow the given instructions.  Instruction fine-tuning, where all of the model's weights are updated is known as full fine-tuning. The process results in a new version of the model with updated weights.
+-  It is important to note that just like pre-training, full fine tuning requires enough memory and compute budget to store and process all the gradients, optimizers and other components that are being updated during training. So you can benefit from the memory optimization and parallel computing strategies that you learned about last week.
+
+##  how do you actually go about instruction
+- first step is to prepare your training data. There are many publicly available datasets that have been used to train earlier generations of language models, although most of them are not formatted as instructions. Luckily, developers have assembled prompt template libraries that can be used to take existing datasets, for example, the large data set of Amazon product reviews and turn them into instruction prompt datasets for fine-tuning. Prompt template libraries include many templates for different tasks and different data sets.
+
+![image](https://github.com/user-attachments/assets/1a3487cb-29e9-4933-8d7f-13a92123b40e)
+
+- in each case you pass the original review, here called review_body, to the template, where it gets inserted into the text that starts with an instruction like predict the associated rating, generate a star review, or give a short sentence describing the following product review. 
+- The result is a prompt that now contains both an instruction and the example from the data set.
+- Once you have your instruction data set ready, as with standard supervised learning, you divide the data set into training validation and test splits. During fine tuning, you select prompts from your training data set and pass them to the LLM, which then generates completions.
+-  you compare the LLM completion with the response specified in the training data. Remember that the output of an LLM is a probability distribution across tokens. So you can compare the distribution of the completion and that of the training label and use the standard crossentropy function to calculate loss between the two token distributions.
+-  And then use the calculated loss to update your model weights in standard backpropagation. You'll do this for many batches of prompt completion pairs and over several epochs, update the weights so that the model's performance on the task improves.
+-  As in standard supervised learning, you can define separate evaluation steps to measure your LLM performance using the holdout validation data set.
+-  his will give you the validation accuracy, and after you've completed your fine tuning, you can perform a final performance evaluation using the holdout test data set. This will give you the test accuracy.
+-  The fine-tuning process results in a new version of the base model, often called an instruct model that is better at the tasks you are interested in. Fine-tuning with instruction prompts is the most common way to fine-tune LLMs these days.
+-  
 
 
 
@@ -254,3 +328,6 @@ __Additional Use Cases:__
 
 
 
+
+-  
+- 
