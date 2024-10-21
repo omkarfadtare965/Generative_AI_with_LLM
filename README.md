@@ -452,7 +452,30 @@ Prompt tuning sounds a bit like prompt engineering, but they are quite different
 - prompt tuning doesn't perform as well as full fine tuning for smaller LLMs. However, as the model size increases, so does the performance of prompt tuning. And once models have around 10 billion parameters, prompt tuning can be as effective as full fine tuning and offers a significant boost in performance over prompt engineering alone. One potential issue to consider is the interpretability of learned virtual tokens. because the soft prompt tokens can take any value within the continuous embedding vector space. The trained tokens don't correspond to any known token, word, or phrase in the vocabulary of the LLM. However, an analysis of the nearest neighbor tokens to the soft prompt location shows that they form tight semantic clusters.In other words, the words closest to the soft prompt tokens have similar meanings.
 - LoRA is broadly used in practice because of the comparable performance to full fine tuning for many tasks
 
+### RLHF (Reinforcement learning with human feedback):
+- It helps to align the model with human values. LLMs might have a challenge in that it's creating sometimes harmful content or like a toxic tone or voice. And by aligning the model with human feedback and using reinforcement learning as an algorithm. You can help to align the model to reduce that and to align towards, less harmful content and much more helpful content as well.
+- LLMs do generate problematic outputs. But it feels like with the progress of technology, researchers are consistently making them morethree Hs, (Honest, hopeful and harmless)
 
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+### How to use LLMs as a reasoning engine and let it cause our own of routines to create an agent that can take actions:
+
+
+
+### Responsible AI:
+
+### RAG (Retrieval augmented system)
